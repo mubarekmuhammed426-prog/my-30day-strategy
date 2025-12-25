@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30-Day Strategy Tracker</title>
+    <style>
+        :root {
+            --primary: #2ecc71;
+            --secondary: #3498db;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: var(--light); margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: auto; }
+        h1 { text-align: center; color: var(--primary); }
+        .day-card { background: #34495e; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border-left: 5px solid var(--secondary); }
+        .day-card.completed { border-left-color: var(--primary); opacity: 0.6; text-decoration: line-through; }
+        input[type="checkbox"] { transform: scale(1.5); cursor: pointer; }
+        .progress-bar { background: #7f8c8d; height: 10px; border-radius: 5px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 30-Day Strategy</h1>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div id="taskContainer"></div>
+</div>
+
+<script>
+    const strategy = [
+        { d: 1, t: "YouTube: Channel ijaari & Niche filadhu" },
+        { d: 2, t: "Forex: Demo account banadhu" },
+        { d: 3, t: "YouTube: Video 1ffaa Script barreessi" },
+        { d: 4, t: "Forex: Support & Resistance baradhu" },
+        { d: 5, t: "YouTube: Video 1ffaa Edit godhi" },
+        { d: 6, t: "Forex: Candlestick basic baradhu" },
+        { d: 7, t: "YouTube: Video 1ffaa Upload godhi" },
+        { d: 8, t: "Forex: Market Structure hubadhu" },
+        { d: 9, t: "YouTube: Video 2ffaa Script barreessi" },
+        { d: 10, t: "Forex: Risk Management baradhu" },
+        { d: 11, t: "YouTube: Video 2ffaa Edit godhi" },
+        { d: 12, t: "Forex: Demo irratti practice godhi" },
+        { d: 13, t: "YouTube: Video 2ffaa Upload godhi" },
+        { d: 14, t: "Forex: Trading journal jalqabi" },
+        { d: 15, t: "YouTube: Thumbnail fooyyessi" },
+        { d: 16, t: "Forex: Strategy 1 qopheessi" },
+        { d: 17, t: "YouTube: Video 3ffaa Script barreessi" },
+        { d: 18, t: "Forex: Backtesting godhi" },
+        { d: 19, t: "YouTube: Video 3ffaa Edit godhi" },
+        { d: 20, t: "Forex: Psychology baradhu" },
+        { d: 21, t: "YouTube: Video 3ffaa Upload godhi" },
+        { d: 22, t: "Forex: Demo results xiinxali" },
+        { d: 23, t: "YouTube: SEO basics baradhu" },
+        { d: 24, t: "Forex: Strategy fooyyessi" },
+        { d: 25, t: "YouTube: Video 4ffaa Script barreessi" },
+        { d: 26, t: "Forex: Discipline irratti hojjedhi" },
+        { d: 27, t: "YouTube: Video 4ffaa Edit godhi" },
+        { d: 28, t: "Forex: Consistency hubadhu" },
+        { d: 29, t: "YouTube: Video 4ffaa Upload godhi" },
+        { d: 30, t: "Forex & YouTube: Review guutuu godhi" }
+    ];
+
+    const container = document.getElementById('taskContainer');
+    const progressFill = document.getElementById('progressFill');
+
+    function updateProgress() {
+        const checked = document.querySelectorAll('input:checked').length;
+        const total = strategy.length;
+        progressFill.style.width = (checked / total * 100) + "%";
+    }
+
+    strategy.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'day-card';
+        div.innerHTML = `
+            <span><strong>Day ${item.d}:</strong> ${item.t}</span>
+            <input type="checkbox" onchange="this.parentElement.classList.toggle('completed'); updateProgress();">
+        `;
+        container.appendChild(div);
+    });
+</script>
+
+</body>
+</html>
