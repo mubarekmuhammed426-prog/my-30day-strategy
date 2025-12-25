@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30-Day Strategy Tracker Pro</title>
+    <style>
+        :root {
+            --bg-dark:#121212; --bg-light:#f4f4f4;
+            --card-dark:#1f1f1f; --card-light:#fff;
+            --text-dark:#f5f5f5; --text-light:#111;
+            --primary:#2ecc71; --secondary:#3498db;
+        }
+        body { margin:0; font-family:'Segoe UI', sans-serif; background:var(--bg-dark); color:var(--text-dark); transition:0.3s; }
+        body.light { background:var(--bg-light); color:var(--text-light); }
+        .container { max-width:600px; margin:auto; padding:20px; }
+        
+        /* Auth Styles */
+        .auth-box { background: var(--card-dark); padding: 30px; border-radius: 12px; margin-top: 50px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        body.light .auth-box { background: var(--card-light); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #444; background: #222; color: white; }
+        body.light input { background: #fff; color: #000; border: 1px solid #ccc; }
+
+        /* App Styles */
+        .controls { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-bottom:20px; }
+        button { padding:10px 16px; border:none; border-radius:6px; cursor:pointer; background:var(--secondary); color:white; font-weight:600; }
+        .progress { height:18px; background:#444; border-radius:10px; overflow:hidden; margin-bottom:15px; }
+        #bar { height:100%; width:0%; background:linear-gradient(90deg,#2ecc71,#27ae60); transition: 0.4s; }
+        .card { padding:15px; border-radius:10px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; background:var(--card-dark); }
+        body.light .card { background:var(--card-light); }
+        .card.done { opacity:0.4; text-decoration:line-through; }
+        .tag { font-size:11px; opacity:0.7; background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:4px; }
+        #analytics { text-align: center; margin-bottom: 15px; font-weight: bold; }
+    </style>
+</head>
+<body class="">
+
+<div id="auth-section" class="container">
+    <div class="auth-box">
+        <h2 id="auth-title">Ooluu / Seenuu</h2>
+        <input type="email" id="email" placeholder="Email keessan">
+        <input type="password" id="password" placeholder="Password">
+        <div style="margin-top:15px;">
+            <button onclick="handleAuth('login')">Seeni (Login)</button>
+            <button onclick="handleAuth('signup')" style="background:var(--primary);">Galmaa'i (Sign Up)</button>
+        </div>
+        <p id="auth-error" style="color:red; margin-top:10px; font-size:13px;"></p>
+    </div>
+</div>
+
+<div id="app-section" class="container" style="display:none;">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h2 id="title">30-Day Strategy Tracker</h2>
+        <button onclick="handleLogout()" style="background:#e74c3c; padding:5px 10px; font-size:12px;">Logout</button>
+    </div>
+
+    <div class="controls">
+        <button onclick="filterTasks('all')">Hunda</button>
+        <button onclick="filterTasks('youtube')">YouTube</button>
+        <button onclick="filterTasks('forex')">Forex</button>
+        <button onclick="toggleTheme()">🌙/☀️</button>
+        <button onclick="switchLang()">EN/OM</button>
+        <button onclick="exportPDF()" style="background:#e67e22;">PDF</button>
+    </div>
+
+    <div class="progress"><div id="bar"></div></div>
+    <div id="analytics"></div>
+    <div id="tasks"></div>
+    
+    <button onclick="adminReset()" style="background:#c0392b; width:100%; margin-top:20px;">Reset Progress</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "XXXX",
+        appId: "XXXX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Global Functions for UI
+    window.handleAuth = async (type) => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        try {
+            if(type === 'signup') await createUserWithEmailAndPassword(auth, email, password);
+            else await signInWithEmailAndPassword(auth, email, password);
+        } catch (e) { document.getElementById('auth-error').innerText = e.message; }
+    };
+
+    window.handleLogout = () => signOut(auth);
+
+    window.saveToCloud = async (data) => {
+        if(auth.currentUser) {
+            await setDoc(doc(db, "users", auth.currentUser.uid), { progress: data });
+        }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('app-section').style.display = 'block';
+            const docSnap = await getDoc(doc(db, "users", user.uid));
+            if (docSnap.exists()) {
+                window.updateProgressFromCloud(docSnap.data().progress);
+            }
+        } else {
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('app-section').style.display = 'none';
+        }
+    });
+</script>
+
+<script>
+    const langData = {
+        en: {title:"30-Day Strategy Tracker", completed:"Completed"},
+        om: {title:"Karoora Guyyaa 30", completed:"Kan xumurame"}
+    };
+    let lang = "en";
+    let progress = [];
+    let filter = "all";
+    const tasks = Array.from({length: 30}, (_, i) => ({
+        id: i, d: i+1, 
+        text: i%2===0 ? "YouTube Content Strategy" : "Forex Market Analysis",
+        type: i%2===0 ? "youtube" : "forex"
+    }));
+
+    function renderTasks() {
+        const box = document.getElementById("tasks");
+        box.innerHTML = "";
+        tasks.filter(t => filter === "all" || t.type === filter).forEach(t => {
+            const done = progress.includes(t.id);
+            const div = document.createElement("div");
+            div.className = `card ${done ? 'done' : ''}`;
+            div.innerHTML = `<div><b>Day ${t.d}</b><br>${t.text}<br><span class="tag">${t.type}</span></div>
+                             <input type="checkbox" ${done?'checked':''} onchange="toggle(${t.id})">`;
+            box.appendChild(div);
+        });
+        document.getElementById("bar").style.width = (progress.length/30*100) + "%";
+        document.getElementById("analytics").innerText = `${langData[lang].completed}: ${progress.length}/30`;
+        document.getElementById("title").innerText = langData[lang].title;
+    }
+
+    window.toggle = (id) => {
+        progress.includes(id) ? progress = progress.filter(x => x!==id) : progress.push(id);
+        renderTasks();
+        if(window.saveToCloud) window.saveToCloud(progress);
+    };
+
+    window.updateProgressFromCloud = (data) => { progress = data || []; renderTasks(); };
+    window.filterTasks = (f) => { filter = f; renderTasks(); };
+    window.toggleTheme = () => document.body.classList.toggle("light");
+    window.switchLang = () => { lang = lang === "en" ? "om" : "en"; renderTasks(); };
+    window.adminReset = () => { if(confirm("Reset?")) { progress = []; renderTasks(); window.saveToCloud(progress); } };
+    
+    window.exportPDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("My Strategy Progress", 10, 10);
+        progress.forEach((id, i) => doc.text(`Day ${tasks[id].d}: Completed`, 10, 20 + (i*10)));
+        doc.save("progress.pdf");
+    };
+
+    renderTasks();
+</script>
+</body>
+</html>
